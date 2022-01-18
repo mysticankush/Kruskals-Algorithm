@@ -1,0 +1,185 @@
+import java.util.*;
+class Tuple{
+    int node1;
+    int node2;
+    int weight;
+    Tuple(int node1,int node2,int weight)
+    {
+        this.node1=node1;
+        this.node2=node2;
+        this.weight=weight;
+    }
+}
+class Pair{
+    int node;
+    int weight;
+    Pair(int node,int weight)
+    {
+        this.node=node;
+        this.weight=weight;
+    }
+}
+class Graph
+{
+    int x;
+    int y;
+    public static void addEdge(ArrayList<ArrayList<Pair>>v,int x,int y,int z)
+    {
+        v.get(x).add(new Pair(y,z));
+        v.get(y).add(new Pair(x,z));
+    }
+    public static void printAdjacancyList(ArrayList<ArrayList<Pair>>v,int n)
+    {
+        for(int i=0;i<n;i++)
+        {
+            System.out.print(i + " -> ");
+            for(Pair j:v.get(i))
+            {
+                System.out.print("("+j.node+","+j.weight+") ");
+            }
+            System.out.println();
+        }
+    }
+}
+class PriorityQueue
+{
+    private ArrayList<Tuple>v=new ArrayList<>();
+    void swap(int i,int j)
+    {
+        Tuple temp=v.get(j);
+        v.set(j,v.get(i));
+        v.set(i,temp);
+    }
+    public void add(Tuple k)//Swim
+    {
+        v.add(k);
+        int child=v.size()-1;
+        int parent=(child-1)/2;
+        while(parent>=0 && v.get(parent).weight>v.get(child).weight)
+        {
+            swap(child,parent);
+            child=parent;
+            parent=(child-1)/2;
+        }
+    }
+    public Tuple peek()
+    {
+        if(v.size()>0)
+            return v.get(0);
+        else
+            return new Tuple(-1,-1,-1);
+    }
+    public void pop()
+    {
+        int sz=v.size()-1;
+        if(sz==-1)
+        {
+            System.out.println("Stack Underflow");
+            return;
+        }
+        swap(0,sz);
+        v.remove(sz);
+        sz--;
+        if(sz==-1)
+        return;
+        //Now Sink
+        int idx=0;
+        while(idx<=sz)//Sink
+        {
+            int l=(2*idx+1);//left child
+            int r=(2*idx+2);//right child
+            int mn=idx;
+            if(l<=sz && v.get(l).weight<=v.get(mn).weight)
+            {
+                mn=l;
+            }
+            if(r<=sz && v.get(r).weight<=v.get(mn).weight)
+            {
+                mn=r;
+            }
+            if(mn==idx)
+            break;
+            swap(mn,idx);
+            idx=mn;
+        }
+    }
+}
+class DSU
+{
+    private ArrayList<Integer>parent=new ArrayList<>();
+    private ArrayList<Integer>sz=new ArrayList<>();
+    DSU()
+    {
+        for(int i=0;i<=1000;i++)
+        {
+            parent.add(i);
+            sz.add(1);
+        }
+    }
+    public int getparent(int x)
+    {
+        if(x!=parent.get(x))
+        {
+            parent.set(x,getparent(parent.get(x)));
+        }
+        return parent.get(x);
+    }
+    public void uniona(int x,int y)
+    {
+        int a=getparent(x);
+        int b=getparent(y);
+        if(a==b)
+        {
+            return;
+        }
+        if(sz.get(a)>sz.get(b))
+        {
+            sz.set(a,sz.get(a)+sz.get(b));
+            parent.set(a,parent.get(b));
+        }
+        else
+        {
+            sz.set(b,sz.get(a)+sz.get(b));
+            parent.set(b,parent.get(a));
+        }
+    }
+} 
+class MainClass
+{
+    public static void main(String args[])
+    {
+        Scanner sc=new Scanner(System.in);
+        int n=sc.nextInt();//Number of Vertices
+        int m=sc.nextInt();//Number of Edges
+        ArrayList<ArrayList<Pair>>v=new ArrayList<ArrayList<Pair>>(n+2);
+        for(int i=0;i<n;i++)
+        {
+            v.add(new ArrayList<>());
+        }
+        Graph minspanningtree=new Graph();
+        PriorityQueue pq=new PriorityQueue();
+        for(int i=0;i<m;i++)
+        {
+            int node1=sc.nextInt();
+            int node2=sc.nextInt();
+            int weight=sc.nextInt();
+            pq.add(new Tuple(node1,node2,weight));
+        }
+        //Finding Minimum Spanning Tree using Kruskals Algorithm
+        DSU obj=new DSU();
+        int totalweight=0;
+        while(pq.peek().node1!=-1)
+        {
+            Tuple temp=pq.peek();
+            if(obj.getparent(temp.node1)!=obj.getparent(temp.node2))//No cycle
+            {
+                totalweight+=temp.weight;
+                minspanningtree.addEdge(v,temp.node1,temp.node2,temp.weight);
+                obj.uniona(temp.node1,temp.node2);
+            }
+            pq.pop();
+        }
+        System.out.println("Total weight of the minimum spanning tree is -> "+totalweight);
+        minspanningtree.printAdjacancyList(v,n);
+    }
+}
